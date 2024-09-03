@@ -24,6 +24,7 @@ Ahora bien, para la realización de esta función se tuvieron que modificar arch
 
 Además de la creacion de un archivo para la funcion el cual sería `yosoytupadre.c`, donde se implementará el codigo que devuelve el id del padre y del hijo, el cual es el siguiente:
 
+
 ```
 #include "kernel/types.h"
 #include "kernel/stat.h"
