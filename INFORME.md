@@ -1,27 +1,49 @@
-# Tarea 0
+# Tarea 1
 
-## Pasos seguidos para instalar xv6
+## Funcionamiento de las llamadas al sistema
 
-El orden de los pasos fue el siguiente:
+A Continuación se mostrará imagenes sobre el funcionamiento de las llamadas al sistema, donde se puede notar el llamado a la función `yosoytupadre` que entregará el Id del padre y del hijo.
 
-1. Instalar la Toolchain de riscv: Comence con este paso ya que es crucial para el funcionamiento de xv6-riscv. De manera que, se comnezo con clonar el repositorio de la toolchain con `git clone https://github.com/riscv/riscv-gnu-toolchain` donde luego ingresamos a la carpeta. Así, hay que seguir los pasos de instalacion que indica este repositorio en sus prerequisitos, lo cual uno es instalar `$ sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev libslirp-dev`. Luego, como indican los pasos `./configure --prefix=/usr/local`, para finalmente realizar un `sudo make`
-
-2. Instalar qemu: Se procederá a la instalación de qemu con e siguiente codigo `wget https://download.qemu.org/qemu-7.2.0.tar.xz` donde luego para extraerlo debemos usar el comando `tar xf qemu-7.2.0.tar.xz`. Luego, entramos en la carpeta e ingresamos el siguiente codigo `./configure --disable-kvm --disable-werror --prefix=/usr/local --target-list="riscv64-softmmu"` luego realizamos un `sudo make`, despues `sudo make install` y asi se tiene instalado qemu.
-
-3. Creación repositorio: Para este paso, se realizo una clonación del repositorio que fue resultado de un fork del repositorio del profesor, lo que resulta en el siguiente comando `git clone https://github.com/Felipe700/xv6-riscv.git` donde luego creo una nueva rama con el comando `git branch FelipeM_T0` (Anteriormente este era el nombre de la branch, luego por temas de instrucciones realice un cambio del nombre de la branch con el comando `git branch -m felipe_meneses_t0`). Luego ingresamos a la rama con `git checkout FelipeM_t0` (recordar que realice un cambio de nombre de la branch)
-
-4. Correr xv6: Ingresamos a la carpeta `cd xv6-riscv` donde luego realziamos `make qemu`, donde ya es funciona xv6.
+![Evidencia](yosoytupadre.png) 
 
 
-## Problemas encontrados y soluciones
+## Expliación de las modificaciones realizadas
 
-En un comienzo tuve bastantes problemas con la toolchain, esta no la tenia instalada, y como no sabia del tema, se volvio un tema de harta busqueda en internet de soluciones, pero nada fue claro, asi mismo como la incompatibilidad entre versiones provocaba muchas veces error. Es así como, hablando con compañeros pude darme cuenta de la version en especifica de qemu que funcionaba con Ubuntu 22.04. De manera que, pude lograr la instalación correcta de xv6 y su funcionamiento.
+Ahora bien, para la realización de esta función se tuvieron que modificar archivos por el lado del kernel y por el lado del usuario.
+
+	- Kernel:
+		* syscall.h: Se le añade la linea de codigo `#define SYS_getppid 22` alfinal, usando la misma sintaxis que el codigo del resto.
+		* syscall.c: Por un lado, al igual que el resto, debemos ingresar `extern uint64 sys_getppid(void);`. Luego debemos ingresar dentro de `static uint64 (*syscalls[])(void) = {...}` debemos ingresar `[SYS_getppid] sys_getppid(void);`
+		* sysproc.c: En este caso, debemos agregar la siguiente linea de codigo `uint64 sys_getppid(void){ return myproc()->parent->pid; }`
+	- User:
+		* user.h: Ingresamos el siguiente codigo: `int getppid(void);`
+		* usys.s: En este caso se ingresa el siguiente codigo `entry("getppid");`
+	- Makefile
+		* En este caso debemos ingresar el siguiente codigo en la sección de UPROGS añadimos el siguiente codigo: `$U/_yosoytupadre\` alfinal.
 
 
-## Confirmación de que xv6 está funcionando correctamente
+Además de la creacion de un archivo para la funcion el cual sería `yosoytupadre.c`, donde se implementará el codigo que devuelve el id del padre y del hijo, el cual es el siguiente:
 
-A continuación se mostrará imagenes mostrando el funcionamiento de xv6:
+```
+#include "kernel/types.h"
+#include "kernel/stat.h"
+#include "user/user.h"
+#include "kernel/fs.h"
 
-![Evidencia1](qemu_ls_echo.png)
+int
+main(int argc, char *argv[])
+{
+    int pid = getpid();
+    int ppid = getppid();
+    printf("Pid: %d\n", pid);
+    printf("PPid: %d\n", ppid);
+    exit(1);
+}
+```
+Y, así es posible correr la funcion yosoytupadre luego de correr `make qemu`.
 
-![Evidencia2](cat.png)
+
+## Dificultades encontradas y cómo se resolvieron
+
+Algunos de los problemas que tuve fue más por el area de la investigación, en si en la prueba si logre realizar bien (con unas breves equivocaciones en la redacción del codigo), pero basicamente en entender que es lo que tenía que ir en cada archivo y entender que pasaba en cada archivo, por lo cual eso fue mi parte más lenta. Realice busquedas por varias paginas que fueron indicando lo mismo, luego se volvio muy intuitivo porque también se notaba que el codigo nuevo por ingresar debía tener similitud con el codigo que ya estaba en el archivo, lo que hizo más logico los cambios por hacer.
+

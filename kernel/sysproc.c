@@ -91,3 +91,10 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// adding the new program getppid
+uint64
+sys_getppid(void)
+{
+  return myproc()->parent->pid;
+}
