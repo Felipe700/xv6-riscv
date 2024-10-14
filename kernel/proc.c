@@ -122,6 +122,8 @@ allocproc(void)
   return 0;
 
 found:
+  p->prioridad = 0;
+  p->boost = 1;
   p->pid = allocpid();
   p->state = USED;
 
@@ -458,6 +460,16 @@ scheduler(void)
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
+
+
+
+	p->prioridad += p->boost;
+	if (p->prioridad >= 9) {
+	  p->boost = -1;
+	}
+	if (p->prioridad <= 0) {
+	  p->boost = 1;
+	}
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
