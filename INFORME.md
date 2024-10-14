@@ -4,7 +4,7 @@
 
 A continuación se motrarán imagenes sobre el funcionamiento de la llamada al sistema, donde se podrá notar el llamado a la función `programaprueba` que se encargará de mostrar los procesos con su respectivo id.
 
-![Evidencia](yosoytupadre.png) 
+![Evidencia](Funcionando.png) 
 
 
 ## Expliación de las modificaciones realizadas
@@ -52,7 +52,7 @@ Y, así es posible correr la funcion programaprueba luego de correr `make qemu`.
 Algunos de los problemas que tuve fue más por el area de la investigación, en si en la prueba si logre realizar bien (con unas breves equivocaciones en la redacción del codigo), pero basicamente en entender que es lo que tenía que ir en cada archivo y entender que pasaba en cada archivo, por lo cual eso fue mi parte más lenta. Realice busquedas por varias paginas que fueron indicando lo mismo, luego se volvio muy intuitivo porque también se notaba que el codigo nuevo por ingresar debía tener similitud con el codigo que ya estaba en el archivo, lo que hizo más logico los cambios por hacer.
 
 Otra de las dificultades que tuvo fue un problema que no entendia su origen y se puede ver en la siguiente imagen:
-
+![Evidencia2](Error.png) 
 
 Me di cuenta, tras prueba y error, que alfinal esto se debía a que los procesos no terminaban de correr completamente cada uno y esto originaba una combinacion con el siguiente proceso, lo que provocaba en un error visual, esto se soluciono de dos manera, con la utilización de sleep() y con la utilización de wait() que ambos ayudaban a mantener el proceso ordenando en su carga.
 
