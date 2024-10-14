@@ -1,8 +1,8 @@
-# Tarea 1
+# Tarea 2
 
-## Funcionamiento de las llamadas al sistema
+## Funcionamiento y lógica del sistema de prioridades
 
-A Continuación se mostrará imagenes sobre el funcionamiento de las llamadas al sistema, donde se puede notar el llamado a la función `yosoytupadre` que entregará el Id del padre y del hijo.
+A continuación se motrarán imagenes sobre el funcionamiento de la llamada al sistema, donde se podrá notar el llamado a la función `programaprueba` que se encargará de mostrar los procesos con su respectivo id.
 
 ![Evidencia](yosoytupadre.png) 
 
@@ -12,42 +12,47 @@ A Continuación se mostrará imagenes sobre el funcionamiento de las llamadas al
 Ahora bien, para la realización de esta función se tuvieron que modificar archivos por el lado del kernel y por el lado del usuario.
 
 - Kernel:
-	* syscall.h: Se le añade la linea de codigo `#define SYS_getppid 22` alfinal, usando la misma sintaxis que el codigo del resto.
-	* syscall.c: Por un lado, al igual que el resto, debemos ingresar `extern uint64 sys_getppid(void);`. Luego debemos ingresar dentro de `static uint64 (*syscalls[])(void) = {...}` debemos ingresar `[SYS_getppid] sys_getppid(void);`
-	* sysproc.c: En este caso, debemos agregar la siguiente linea de codigo `uint64 sys_getppid(void){ return myproc()->parent->pid; }`
-- User:
-	* user.h: Ingresamos el siguiente codigo: `int getppid(void);`
-	* usys.s: En este caso se ingresa el siguiente codigo `entry("getppid");`
+	* proc.c: Se le añade la linea de codigo `p->prioridad = 0;` y  `p->boost = 1;`, que se será donde se definen las variables para la prioridad de los procesos. Luego se añade `p->prioridad += p->boost;`, `if(p->prioridad >= 9){ p->boost = -1;}` y `if(p->prioridad <= 0){p->boost = 1;}` en el mismo archivo, pero en la parte de schedule(void). 
+	* proc.h: En este archivo añadiremos las variables anteriores pero para definirlas, la cual es `int prioridad` y `int boost` 
+
 - Makefile
-	* En este caso debemos ingresar el siguiente codigo en la sección de UPROGS añadimos el siguiente codigo: `$U/_yosoytupadre\` alfinal.
+	* En este caso debemos ingresar el siguiente codigo en la sección de UPROGS añadimos el siguiente codigo: `$U/_programaprueba\` alfinal.
 
-
-Además de la creacion de un archivo para la funcion el cual sería `yosoytupadre.c`, donde se implementará el codigo que devuelve el id del padre y del hijo, el cual es el siguiente:
-
+Además de la creacion de un archivo para la funcion el cual sería `programaprueba.c`, donde se implementará el codigo para la creación de los 20 procesos.
 
 ```
 #include "kernel/types.h"
-#include "kernel/stat.h"
 #include "user/user.h"
-
-
 int
-main(int argc, char *argv[])
+main()
 {
-    int pid = getpid();
-    int ppid = getppid();
-    printf("Corriendo yosoytupadre... \n");
-    printf("Pid: %d\n", pid);
-    printf("PPid: %d\n", ppid);
-    exit(1);
-}
+  int n = 20;
+  printf("Comenzando la creación de %d procesos nuevos\n", n);
+  for(int i = 0; i < n; i++) {
+    int nuevo_proceso = fork();
+    if(nuevo_proceso == 0) {
+      sleep(i);
+      printf("Ejecutando proceso felipe pid: %d\n", getpid());
 
+      exit(0);
+    }
+  }
+  for(int i = 0; i < n; i++) {
+    wait(0);
+  }
+  exit(0);
+}
 ```
 
-Y, así es posible correr la funcion yosoytupadre luego de correr `make qemu`.
+Y, así es posible correr la funcion programaprueba luego de correr `make qemu`.
 
 
-## Dificultades encontradas y cómo se resolvieron
+## Dificultades encontradas y soluciones implementadas
 
 Algunos de los problemas que tuve fue más por el area de la investigación, en si en la prueba si logre realizar bien (con unas breves equivocaciones en la redacción del codigo), pero basicamente en entender que es lo que tenía que ir en cada archivo y entender que pasaba en cada archivo, por lo cual eso fue mi parte más lenta. Realice busquedas por varias paginas que fueron indicando lo mismo, luego se volvio muy intuitivo porque también se notaba que el codigo nuevo por ingresar debía tener similitud con el codigo que ya estaba en el archivo, lo que hizo más logico los cambios por hacer.
+
+Otra de las dificultades que tuvo fue un problema que no entendia su origen y se puede ver en la siguiente imagen:
+
+
+Me di cuenta, tras prueba y error, que alfinal esto se debía a que los procesos no terminaban de correr completamente cada uno y esto originaba una combinacion con el siguiente proceso, lo que provocaba en un error visual, esto se soluciono de dos manera, con la utilización de sleep() y con la utilización de wait() que ambos ayudaban a mantener el proceso ordenando en su carga.
 
