@@ -1,8 +1,8 @@
-# Tarea 2
+# Tarea 3
 
 ## Funcionamiento y lógica del sistema de prioridades
 
-A continuación se motrarán imagenes sobre el funcionamiento de la llamada al sistema, donde se podrá notar el llamado a la función `programaprueba` que se encargará de mostrar los procesos con su respectivo id.
+A continuación se motrarán imagenes sobre el funcionamiento de la llamada al sistema, donde se podrá notar el llamado a la función `test_protect`. Así, se logro implementar las funciones mprotect y munprotect., donde cada funcion tendra su región de memoria y largo.
 
 ![Evidencia](Funcionando.png) 
 
@@ -12,46 +12,75 @@ A continuación se motrarán imagenes sobre el funcionamiento de la llamada al s
 Ahora bien, para la realización de esta función se tuvieron que modificar archivos por el lado del kernel y por el lado del usuario.
 
 - Kernel:
-	* proc.c: Se le añade la linea de codigo `p->prioridad = 0;` y  `p->boost = 1;`, que se será donde se definen las variables para la prioridad de los procesos. Luego se añade `p->prioridad += p->boost;`, `if(p->prioridad >= 9){ p->boost = -1;}` y `if(p->prioridad <= 0){p->boost = 1;}` en el mismo archivo, pero en la parte de schedule(void). 
-	* proc.h: En este archivo añadiremos las variables anteriores pero para definirlas, la cual es `int prioridad` y `int boost` 
+	* proc.c: Se define la función mprotect `int mprotect(void *addr, int len){..}` y la función munprotect `int munprotect(void *addr, int len){..}` para luego ya ser llamados.
+	* proc.h: En este archivo añadiremos las funciones anteriores pero para definirlas, la cual es `int mprotect(void *addr, int len);` y `int munprotect(void *addr, int len);`
+    * syscall.c: En este archivo se define para ambas funciones el siguiente codigo `extern uint64 sys_mprotect(void);` y `extern uint64 sys_munprotect(void);`. Además se define `[SYS_mprotect] sys_mprotect` y `[SYS_munprotect] sys_munprotect`. Donde por ultimo debemos definir  `uint64 sys_mprotect(void){..}` y `uint64 sys_munprotect(void){..}` para lograr ambas funciones.
+    * syscall.h En este archivo debemos definir las variables previamente mencionadas la cual es `#define SYS_mprotect 23` y `#define SYS_munprotect 24`
 
-- Makefile
-	* En este caso debemos ingresar el siguiente codigo en la sección de UPROGS añadimos el siguiente codigo: `$U/_programaprueba\` alfinal.
+- Makefile: En este caso debemos ingresar el siguiente codigo en la sección de UPROGS añadimos el siguiente codigo: `$U/_test_protect\` alfinal para definir la función.
+  
+- User
+    * user.h: Se definen las funciones `int mprotect(void *addr, int len);` y `int munprotect(void *addr, int len);`
+    * usys.pl: Se define tanto  `entry("mprotect"); y `entry("munprotect");`
 
-Además de la creacion de un archivo para la funcion el cual sería `programaprueba.c`, donde se implementará el codigo para la creación de los 20 procesos.
+
+Además de la creacion de un archivo para la funcion el cual sería `test_protect.c`, donde se implementará el codigo con las funciones mprotect y munprotect
 
 ```
-#include "kernel/types.h"
-#include "user/user.h"
-int
-main()
+#include "../kernel/types.h"
+#include "../kernel/stat.h"
+#include "user.h"
+#define PAGE_SIZE 4096
+int main() 
 {
-  int n = 20;
-  printf("Comenzando la creación de %d procesos nuevos\n", n);
-  for(int i = 0; i < n; i++) {
-    int nuevo_proceso = fork();
-    if(nuevo_proceso == 0) {
-      sleep(i);
-      printf("Ejecutando proceso felipe pid: %d\n", getpid());
-
-      exit(0);
+    int size = PAGE_SIZE; 
+    void *addr = sbrk(size);
+    if (addr == (void *)-1) {
+      printf("sbrk failed\n");
+      exit(1);
     }
-  }
-  for(int i = 0; i < n; i++) {
-    wait(0);
-  }
-  exit(0);
+    char *p = (char *)addr;
+    for (int i = 0; i < size; i++) {
+        p[i] = 'A';
+    }
+    if (mprotect(addr, 1) < 0) {
+        printf("mprotect failed\n");
+        exit(1);
+	}
+    int success = 1;
+    if (fork() == 0) {
+        p[0] = 'B';
+        success = 0;
+        exit(0);
+    } else {
+        wait(0);
+    }
+    if (success) {
+        printf("mprotect ha funcionado\n");
+    } else {
+        printf("mprotect test failed: write succeeded on protected memory\n");
+    }
+    if (munprotect(addr, 1) < 0) {
+        printf("munprotect failed\n");
+        exit(1);
+    }
+    p[0] = 'C';
+    printf("munprotect ha funcionado\n");
+    exit(0);
 }
+
 ```
 
-Y, así es posible correr la funcion programaprueba luego de correr `make qemu`.
+Y, así es posible correr la funcion test_protect luego de correr `make qemu`.
 
 
 ## Dificultades encontradas y soluciones implementadas
 
-Algunos de los problemas que tuve fue más por el area de la investigación, en si en la prueba si logre realizar bien (con unas breves equivocaciones en la redacción del codigo), pero basicamente en entender que es lo que tenía que ir en cada archivo y entender que pasaba en cada archivo, por lo cual eso fue mi parte más lenta. Realice busquedas por varias paginas que fueron indicando lo mismo, luego se volvio muy intuitivo porque también se notaba que el codigo nuevo por ingresar debía tener similitud con el codigo que ya estaba en el archivo, lo que hizo más logico los cambios por hacer.
 
-Otra de las dificultades que tuvo fue un problema que no entendia su origen y se puede ver en la siguiente imagen:
+Personalmente la dificultad que tuve es en el area investigativa, aunque si se dio un repositorio para llevar a cabo esto, personalmente siento que tuve que realizar varias personalizaciones al codigo, además de que no logro cierto entendimiento de ciertas partes de la logica, por lo tanto, investigar para entender también me atrasa en el progreso.
+
+Uno de los pequeñas dificultades que tuve fue con el direccionamiento y correcta definición de las funciones para llevar a cabo el programa, sin embargo, luego de revisión con la metodologia de las tareas anteriores pude recordar cual era los archivos requeridos para lograr esta implementación de manera correcta.
+
 ![Evidencia2](Error.png) 
 
-Me di cuenta, tras prueba y error, que alfinal esto se debía a que los procesos no terminaban de correr completamente cada uno y esto originaba una combinacion con el siguiente proceso, lo que provocaba en un error visual, esto se soluciono de dos manera, con la utilización de sleep() y con la utilización de wait() que ambos ayudaban a mantener el proceso ordenando en su carga.
+El error era basicamente que olvide el uso de user.h
