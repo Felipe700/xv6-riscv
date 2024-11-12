@@ -93,13 +93,68 @@ int
 allocpid()
 {
   int pid;
-  
+
   acquire(&pid_lock);
   pid = nextpid;
   nextpid = nextpid + 1;
   release(&pid_lock);
 
   return pid;
+}
+
+// Se define la funcion mprotect
+int
+mprotect(void *addr, int len)
+{
+  struct proc *p = myproc();
+  uint64 va = (uint64) addr;
+  for (uint64 a = va; a < va + len; a += PGSIZE) {
+      pte_t *pte = walk(p->pagetable, a, 0);
+      if (pte == 0 || (*pte & PTE_V) == 0) {
+          return -1;
+      }
+      if (*pte & PTE_W) {
+          printf("Pagina en 0x%lx se puede escribir\n", a);
+      } else {
+          printf("Pagina en 0x%lx solo se puede leer\n", a);
+      }
+      *pte &= ~PTE_W;
+      if (*pte & PTE_W) {
+          printf("Pagina en 0x%lx se puede escribir\n", a);
+      } else {
+          printf("Pagina en 0x%lx solo se puede leer\n", a);
+      }
+  }
+  sfence_vma(); 
+  return 0;
+}
+
+
+// Se define la funcion munprotect
+int
+munprotect(void *addr, int len)
+{
+  struct proc *p = myproc();
+  uint64 va = (uint64) addr;
+  for (uint64 a = va; a < va + len; a += PGSIZE) {
+      pte_t *pte = walk(p->pagetable, a, 0);
+      if (pte == 0 || (*pte & PTE_V) == 0) {
+          return -1; 
+      }
+      if (*pte & PTE_W) {
+          printf("Pagina en 0x%lx es ahora escribible\n", a);
+      } else {
+          printf("Pagina en 0x%lx solo se puede leer\n", a);
+      }
+      *pte |= PTE_W;
+      if (*pte & PTE_W) {
+          printf("Pagina en 0x%lx es ahora escribible\n", a);
+      } else {
+          printf("Pagina en 0x%lx solo se puede leer\n", a);
+      }
+  }
+  sfence_vma(); 
+  return 0;
 }
 
 // Look in the process table for an UNUSED proc.

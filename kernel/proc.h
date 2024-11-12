@@ -108,3 +108,5 @@ struct proc {
   char name[16];               // Process name (debugging)
 
 };
+int mprotect(void *addr, int len);
+int munprotect(void *addr, int len);
