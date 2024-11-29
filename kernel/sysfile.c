@@ -288,8 +288,10 @@ create(char *path, short type, short major, short minor)
     iupdate(dp);
   }
 
+  ip->permissions = 3; //damos el valor de 3 para dar escritura y lectura
   iunlockput(dp);
-
+  
+  
   return ip;
 
  fail:
@@ -355,6 +357,29 @@ sys_open(void)
   } else {
     f->type = FD_INODE;
     f->off = 0;
+
+	//aca introducimos la funcion para cuando el permiso sea 0 y asi en consecutiva para cada unos de los valores
+    if(ip->permissions == 0){
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+    if(ip->permissions == 1 && (omode & (O_WRONLY | O_RDWR))){
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+    if (ip->permissions == 2 && ((omode & (O_RDONLY | O_RDWR)))){
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+    if (ip->permissions == 5 && (omode & (O_RDWR | O_WRONLY))){
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+
   }
   f->ip = ip;
   f->readable = !(omode & O_WRONLY);
@@ -369,6 +394,35 @@ sys_open(void)
 
   return fd;
 }
+
+uint64
+//llamamos a la función
+sys_chmod(void)
+{
+  char path[MAXPATH];
+  int mode;
+  struct inode *ip;
+
+  argstr(0, path, MAXPATH);
+  argint(1, &mode);
+  begin_op();
+  if((ip = namei(path)) == 0){
+    end_op();
+    return -1;
+  }
+  ilock(ip);
+  if(ip->permissions== 5){
+    iunlockput(ip);
+    end_op();
+    return -1;
+  } 
+  ip->permissions = mode;
+  iupdate(ip);
+  iunlockput(ip);
+  end_op();
+  return 0;
+}
+
 
 uint64
 sys_mkdir(void)

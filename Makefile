@@ -142,6 +142,7 @@ UPROGS=\
 	$U/_yosoytupadre\
 	$U/_programaprueba\
 	$U/_test_protect\
+	$U/_prueba_tarea4\
 
 fs.img: mkfs/mkfs README.md $(UPROGS)
 	mkfs/mkfs fs.img README.md $(UPROGS)
